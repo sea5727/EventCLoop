@@ -37,12 +37,13 @@ public:
                 return;   
             }
             char * p = nullptr;
-            auto mylen = session->buffer.dispatch_chunk(p, 
-                [](char * buffer, ssize_t len){
-                    if(len < 8) return 0;
-                    //proc
-                    return 10;
-                });
+            auto mylen = session->buffer.dispatch_chunk(p, nullptr);
+            // auto mylen = session->buffer.dispatch_chunk(p, 
+            //     [](char * buffer, ssize_t len){
+            //         if(len < 8) return 0;
+            //         //proc
+            //         return 10;
+            //     });
             if(mylen == 0){
                 std::cout << "[APP] Need More..\n";
                 return;

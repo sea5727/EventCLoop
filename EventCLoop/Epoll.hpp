@@ -35,18 +35,18 @@ namespace EventCLoop{
             }
             return ret;
         }
-        void
+        std::shared_ptr<Event>
         ModEvent(std::shared_ptr<Event> event, struct epoll_event ev){
             std::cout << " ========== Call ModEvent : " << event->fd << std::endl;
+            auto ret = events.at(event->fd);
             events.erase(event->fd);
             events[event->fd] = event;
 
             if(epoll_ctl(epollfd, EPOLL_CTL_MOD, event->fd, &ev) == -1){
+                throw std::logic_error(std::string{"epoll_ctl EPOLL_CTL_ADD fail"} + std::string{strerror(errno)});
                 std::cout << "epoll_ctl EPOLL_CTL_MOD fail " << strerror(errno) << std::endl;
-                // throw std::logic_error(std::string{"epoll_ctl EPOLL_CTL_ADD fail"} + std::string{strerror(errno)});
             }
-            
-            
+            return ret;
         }
 
         void

@@ -51,7 +51,6 @@ namespace EventCLoop
         }
         char *
         move_chunk(){
-            std::cout << "move_chunk start\n";
             memmove(pbuf, (pbuf + reader), writer - reader);
             writer = writer - reader;
             reader = 0;

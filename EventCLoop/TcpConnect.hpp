@@ -5,15 +5,14 @@
 namespace EventCLoop
 {
     class TcpConnect{
+    public:
         Epoll & epoll;
         TcpBuffer buffer;
         Event event;
         uint16_t port;
         std::string ip;
         int sessionfd;
-
-        
-    public:
+    
           TcpConnect() = default;
           TcpConnect(Epoll & epoll, uint16_t port, const std::string & ip)
             : epoll{epoll}
@@ -25,7 +24,8 @@ namespace EventCLoop
             { }
 
         void
-        async_connect(std::function<void(Error)> callback){
+        async_connect(std::function<void(Error & )> callback){
+            clear_session();
 
             sessionfd = socket(AF_INET, SOCK_STREAM, 0);
             if(sessionfd < 0){
@@ -53,16 +53,14 @@ namespace EventCLoop
         }
 
         void
-        async_connect_pop(const struct epoll_event & ev, std::function<void(Error)> callback){
+        async_connect_pop(const struct epoll_event & ev, std::function<void(Error & )> callback){
             struct sockaddr_in server_addr;
             auto error = Error{};
             if(ev.events & EPOLLERR){
                 std::cout << "[CONNECT] ERROR ? \n";
                 // TODO 주석 제거 
                 error = Error{strerror(errno)};
-                epoll.DelEvent(sessionfd);
-                event.clear();
-                close(sessionfd);
+                clear_session();
                 callback(error);
             }
             else if(ev.events & EPOLLIN){ // already connected ?? 
@@ -70,9 +68,7 @@ namespace EventCLoop
                 // // make_sockaddr_struct(server_addr);
                 // // auto ret = ::connect(sessionfd,  (struct sockaddr *)&server_addr, sizeof(server_addr));
                 // // auto error = Error{strerror(errno)};
-                epoll.DelEvent(sessionfd);
-                event.clear();
-                close(sessionfd);
+                clear_session();
                 callback(error);
             }
             else{
@@ -101,19 +97,32 @@ namespace EventCLoop
         }
         void
         clear_session(){
-            epoll.DelEvent(sessionfd);
-            close(sessionfd);
+            if(!event.isCleared()){
+                epoll.DelEvent(event.fd);
+                close(event.fd);
+                event.clear();
+            }
         }
 
 
         void
-        async_write(char * data, size_t len, std::function<void(Error, int)> callback){
+        async_writev(const struct iovec *iovecs, int count, std::function<void(Error & /*error*/, int /*fd*/, ssize_t /*len */)> callback){
+            Error error;
+            auto result = writev(sessionfd, iovecs, count);
+            if(result == -1){
+                error = Error{strerror(errno)};
+            }
+            callback(error, sessionfd, result);
+        }
+
+        void
+        async_write(void * data, size_t len, std::function<void(Error & /*error*/, int /*fd*/, ssize_t /*len */)> callback){
             Error error;
             auto result = write(sessionfd, data, len);
             if(result == -1){
                 error = Error{strerror(errno)};
             }
-            callback(error, result);
+            callback(error, sessionfd, result);
         }
 
         void

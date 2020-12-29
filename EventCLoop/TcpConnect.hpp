@@ -1,33 +1,28 @@
 #pragma once
 
-
-
-#include "Error.hpp"
-#include "Epoll.hpp"
-#include "Event.hpp"
+#include "EventCLoop.hpp"
 
 namespace EventCLoop
 {
     class TcpConnect{
         Epoll & epoll;
-        std::string ip;
+        TcpBuffer buffer;
+        Event event;
         uint16_t port;
-        
+        std::string ip;
         int sessionfd;
 
-        TcpBuffer buffer;
-
-
-
+        
     public:
           TcpConnect() = default;
-          TcpConnect(Epoll & epoll, const std::string & ip, uint16_t port)
+          TcpConnect(Epoll & epoll, uint16_t port, const std::string & ip)
             : epoll{epoll}
+            , buffer{}
+            , event{}
+            , port{port} 
             , ip{ip}
-            , port{port} {
-            
-
-        }
+            , sessionfd{-1}
+            { }
 
         void
         async_connect(std::function<void(Error)> callback){
@@ -38,89 +33,78 @@ namespace EventCLoop
             }
             std::cout << "[CONNECT] fd : " << sessionfd << std::endl;
 
-            struct sockaddr_in server_addr;
-            make_sockaddr_struct(server_addr);
-
             int flags = fcntl(sessionfd, F_GETFL, 0);
             fcntl(sessionfd, F_SETFL, flags | O_NONBLOCK );
 
-            auto ret = ::connect(sessionfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-            auto event = std::make_shared<Event>();
-            event->fd = sessionfd;
-            event->pop = [this, callback](struct epoll_event ev){
-                struct sockaddr_in server_addr;
-                if(ev.events & EPOLLERR){
-                    std::cout << "[CONNECT] ERROR ? \n";
-                    int nerror;
-                    socklen_t len = sizeof(nerror);
-                    if(getsockopt(sessionfd, SOL_SOCKET, SO_ERROR, &nerror, &len) < 0){
-                        throw std::logic_error("TcpConnect EPOLLERR getsockopt error:" + std::string{strerror(errno)});
-                    }
-                    if(nerror != 0){
-                        auto error = Error{strerror(errno)};
-                        auto ret = epoll.DelEvent(sessionfd);
-                        close(sessionfd);
-                        callback(error);
-                        return;
-                    }
-                    else{
-                        auto error = Error{"Unknown error"};
-                        auto ret = epoll.DelEvent(sessionfd);
-                        close(sessionfd);
-                        callback(error);
-                        // noerror?
-                    }
-                    
-                    return;
-                }
-                else if(ev.events & EPOLLIN){ // already connected
-                    make_sockaddr_struct(server_addr);
-                    auto ret = ::connect(sessionfd,  (struct sockaddr *)&server_addr, sizeof(server_addr));
-                    auto error = Error{strerror(errno)};
-                    auto save = epoll.DelEvent(sessionfd);
-                    close(sessionfd);
-                    callback(error);
-                }
-                else{ // success
-                    auto error = Error{};
-                    callback(error);
-                }
-            };
+            struct sockaddr_in server_addr;
+            make_sockaddr_struct(server_addr, ip, port);
 
+            auto ret = ::connect(sessionfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+
+            event.fd = sessionfd;
+            using std::placeholders::_1;
+            event.pop = std::bind(&TcpConnect::async_connect_pop, this, _1, callback);
 
             struct epoll_event ev;
             ev.data.fd = sessionfd;
-            ev.events = EPOLLIN | EPOLLOUT | EPOLLERR;
+            ev.events = EPOLLIN | EPOLLOUT | EPOLLERR; // TODO EPOLLERr 은 하지 않아도 될거같은데
 
             epoll.AddEvent(event, ev);
         }
 
         void
+        async_connect_pop(const struct epoll_event & ev, std::function<void(Error)> callback){
+            struct sockaddr_in server_addr;
+            auto error = Error{};
+            if(ev.events & EPOLLERR){
+                std::cout << "[CONNECT] ERROR ? \n";
+                // TODO 주석 제거 
+                error = Error{strerror(errno)};
+                epoll.DelEvent(sessionfd);
+                event.clear();
+                close(sessionfd);
+                callback(error);
+            }
+            else if(ev.events & EPOLLIN){ // already connected ?? 
+                std::cout << "[CONNECT] EPOLLIN ? \n";
+                // // make_sockaddr_struct(server_addr);
+                // // auto ret = ::connect(sessionfd,  (struct sockaddr *)&server_addr, sizeof(server_addr));
+                // // auto error = Error{strerror(errno)};
+                epoll.DelEvent(sessionfd);
+                event.clear();
+                close(sessionfd);
+                callback(error);
+            }
+            else{
+                epoll.DelEvent(sessionfd);
+                event.clear();
+                callback(error);
+            }
+        }
+
+        void
         async_read(std::function<void(int , char *, size_t len)> callback){
-            auto event = std::make_shared<Event>();
-            event->fd = sessionfd;
-            event->pop = [this, callback](struct epoll_event ev){
-                std::cout << "session pop.. event : " << ev.events << std::endl; 
-                ssize_t len = buffer.read_chunk(ev.data.fd);
-                std::cout << "len : " << len << std::endl;
-                if(len == 0){
-                    auto ret = epoll.DelEvent(ev.data.fd);
-                    close(ev.data.fd);
-                    callback(ev.data.fd, buffer.get_buf(), len); 
-                    return;
-                }
-                else {
-                    callback(ev.data.fd, buffer.get_buf(), len); 
-                }
-            };
+            using std::placeholders::_1;
+            event.fd = sessionfd;
+            event.pop = std::bind(&TcpConnect::async_read_pop, this, _1, callback);
 
             struct epoll_event ev;
             ev.data.fd = sessionfd;
             ev.events = EPOLLIN;
 
-            epoll.ModEvent(event, ev);
-
+            epoll.AddEvent(event, ev);
         }
+        void
+        async_read_pop(const struct epoll_event & ev, std::function<void(int , char *, size_t len)> callback){
+            ssize_t len = buffer.read_chunk(ev.data.fd);
+            callback(ev.data.fd, buffer.get_buf(), len); 
+        }
+        void
+        clear_session(){
+            epoll.DelEvent(sessionfd);
+            close(sessionfd);
+        }
+
 
         void
         async_write(char * data, size_t len, std::function<void(Error, int)> callback){
@@ -133,7 +117,7 @@ namespace EventCLoop
         }
 
         void
-        make_sockaddr_struct(struct sockaddr_in & server_addr){
+        make_sockaddr_struct(struct sockaddr_in & server_addr, const std::string & ip, const uint16_t port){
             if(inet_pton(AF_INET, ip.c_str(), &server_addr.sin_addr) <= 0){
                 throw std::logic_error("socket create fail" + std::string{strerror(errno)});
             }

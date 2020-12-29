@@ -23,7 +23,7 @@ public:
     }
     void
     do_accept(){
-        acceptor.async_accept([&](int sessionfd, std::string ip, uint16_t port){
+        acceptor.async_accept([this](int sessionfd, std::string ip, uint16_t port){
             handle_accept(sessionfd, ip, port);
         });
     }
@@ -34,16 +34,11 @@ public:
         sessions.insert(std::make_pair(sessionfd, session));
         session->async_read([session, this](int fd, char * buffer, size_t readlen){
             if(readlen == 0){
+                session->clear_session(); 
                 return;   
             }
             char * p = nullptr;
             auto mylen = session->buffer.dispatch_chunk(p, nullptr);
-            // auto mylen = session->buffer.dispatch_chunk(p, 
-            //     [](char * buffer, ssize_t len){
-            //         if(len < 8) return 0;
-            //         //proc
-            //         return 10;
-            //     });
             if(mylen == 0){
                 std::cout << "[APP] Need More..\n";
                 return;

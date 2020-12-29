@@ -20,6 +20,7 @@ add_executable(test4_server test4_server.cpp)
 
 add_subdirectory(Doc/epoll)
 add_subdirectory(Doc/timerfd)
+add_subdirectory(Doc/socket)
 
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})

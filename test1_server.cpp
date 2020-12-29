@@ -21,26 +21,27 @@ int main(int argc, char * argv[]){
                 return;
             }
             char * p = nullptr;
-            auto mylen = session->buffer.dispatch_chunk(p, 
-                [](char * buffer, ssize_t len){
-                    if(len < 8) return 0;
-                    //proc
-                    return 10;
-                });
+            auto mylen = session->buffer.dispatch_chunk(p, nullptr);
             if(mylen == 0){
                 std::cout << "Need More..\n";
+                return;
             }
+
             std::cout << "Async_read callback!! len : " << len << std::endl;
+            for(int i = 0 ; i < 1024 ; ++i){
+                auto result = send(sessionfd, p, 10, 0);
+                std::cout << "send sessionfd : " << sessionfd << ", result : " << result << std::endl;
+            }
+            
+            
         });
         
         sessions.insert(std::make_pair(sessionfd, session));
-        // session->buffer.dispatch_chunk()
     });
 
 
     while(1){
         epoll.Run();
-        // std::this_thread::sleep_for(std::chrono::seconds(1));
 
     }
     return 0;

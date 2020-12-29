@@ -32,7 +32,7 @@ namespace EventCLoop
 
         ~TcpSession(){
             std::cout << "default TcpSession Delete\n";
-            epoll.DelEvent(sessionfd);
+            // epoll.DelEvent(sessionfd);
         }
 
         void
@@ -45,16 +45,13 @@ namespace EventCLoop
                 std::cout << "session pop readlen : " << len << std::endl;
                 callback(ev.data.fd, buffer.get_buf(), len);
                 if(len == 0){
+                    std::cout << "len == 0..." << std::endl;
                     auto ret = epoll.DelEvent(ev.data.fd);
+                    std::cout << "close start" << std::endl;
                     close(ev.data.fd);
-                    callback(ev.data.fd, buffer.get_buf(), len); 
+                    std::cout << "close end.." << std::endl;
                     return;
                 }
-                else {
-                    callback(ev.data.fd, buffer.get_buf(), len); 
-                }
-
-                
             };
 
             struct epoll_event ev;
@@ -62,7 +59,16 @@ namespace EventCLoop
             ev.events = EPOLLIN;
 
             epoll.AddEvent(event, ev);
+        }
 
+        void
+        async_write(char * data, size_t len, std::function<void(Error, int)> callback){
+            Error error;
+            auto result = write(sessionfd, data, len);
+            if(result == -1){
+                error = Error{strerror(errno)};
+            }
+            callback(error, result);
         }
     };
 }

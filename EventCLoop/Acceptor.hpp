@@ -59,6 +59,22 @@ namespace EventCLoop
 
                 std::cout << "tcp accept : " << ip << ":" << port << std::endl;
                 callback(sessionfd, ip, port);
+
+                int flag = fcntl(sessionfd, F_GETFL, 0);
+                fcntl(sessionfd, F_SETFL, flag | O_NONBLOCK);
+
+
+                char buf[1024] = { 0, };
+                auto readret = read(sessionfd, buf, sizeof(buf));
+                std::cout << "[Read] readret : " << readret << ", errnor : " << errno << std::endl;
+
+                auto ret = write(sessionfd, buf, 1023);
+                std::cout << "[write] ret : " << ret << ", errnor : " << errno << std::endl;
+                
+
+                
+                EAGAIN ;
+
             };
 
             struct epoll_event ev;

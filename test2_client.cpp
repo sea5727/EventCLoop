@@ -51,7 +51,7 @@ int main(int argc, char * argv[]){
     std::cout << "Hello test1\n";
 
     auto epoll = EventCLoop::Epoll{};
-    auto myapp = MyApp{epoll, "192.168.0.36", 12345};
+    auto myapp = MyApp{epoll, "192.168.0.35", 12345};
     myapp.run();
 
     while(1){

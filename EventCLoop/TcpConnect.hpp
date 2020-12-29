@@ -57,20 +57,16 @@ namespace EventCLoop
                         throw std::logic_error("TcpConnect EPOLLERR getsockopt error:" + std::string{strerror(errno)});
                     }
                     if(nerror != 0){
-                        make_sockaddr_struct(server_addr);
-                        ::connect(sessionfd,  (struct sockaddr *)&server_addr, sizeof(server_addr));
                         auto error = Error{strerror(errno)};
                         auto ret = epoll.DelEvent(sessionfd);
                         close(sessionfd);
                         callback(error);
                         return;
-                        
                     }
                     else{
-
+                        auto error = Error{"Unknown error"};
                         auto ret = epoll.DelEvent(sessionfd);
                         close(sessionfd);
-                        auto error = Error{"Unknown error"};
                         callback(error);
                         // noerror?
                     }
@@ -124,6 +120,16 @@ namespace EventCLoop
 
             epoll.ModEvent(event, ev);
 
+        }
+
+        void
+        async_write(char * data, size_t len, std::function<void(Error, int)> callback){
+            Error error;
+            auto result = write(sessionfd, data, len);
+            if(result == -1){
+                error = Error{strerror(errno)};
+            }
+            callback(error, result);
         }
 
         void

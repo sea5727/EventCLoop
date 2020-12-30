@@ -13,6 +13,74 @@
 3. timerfd
 4. signalfd
 5. eventfd
+---
+### 1. Epoll
+```cpp
+#include "EventCLoop/EventCLoop.hpp"
+auto epoll = EventCLoop::Epoll{};
+
+while(1){
+    epoll.Run();
+}
+```
+### 2. Timer
+```cpp
+#include "EventCLoop/EventCLoop.hpp"
+
+auto p_timer = std::make_shared<EventCLoop::Timer>(epoll);
+
+p_timer->initOneTimer(1, 0); // timer ( 1sec )
+p_timer->async_wait([](EventCLoop::Error & error) mutable { // 무한 반복
+    if(error){ // error control
+        return;
+    }
+    //proc
+});
+```
+
+### 3.Signal
+```cpp
+auto signal = EventCLoop::Signal<3>{epoll, {SIGHUP,SIGUSR1, SIGUSR2}};
+
+signal.AsyncSignal([](int signalno){ 
+    switch(signalno){
+        case SIGHUP: // proc sighup
+            break;
+        case SIGUSR1: // proc sigusr1
+            break;
+        case SIGUSR2: // proc sigusr2
+            break;
+        default: // error ? 
+            break;
+    }
+});
+```
+
+### 4. Eventfd
+```cpp
+auto epoll = EventCLoop::Epoll{};
+auto threadpool = std::vector<std::thread>{};
+
+//example for event in another thread
+threadpool.emplace_back([&epoll]{
+    auto event_fd = EventCLoop::Eventfd{epoll}; // epoll 이 실행중인 thread에서 event 호출
+    while(1){
+        event_fd.SendEvent([]{ // main thread 에서 실행된다.
+            std::cout << "proc in main thread per 1seconds" << std::endl;
+        });
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}); 
+
+while(1){
+    epoll.Run();
+}
+```
+
+### 5. Socket
+```cpp
+```
+
 
 ---
 ### 이 라이브러리의 장점

@@ -47,7 +47,7 @@ namespace EventCLoop
 
             struct epoll_event ev;
             ev.data.fd = sessionfd;
-            ev.events = EPOLLIN | EPOLLOUT | EPOLLERR; // TODO EPOLLERr 은 하지 않아도 될거같은데
+            ev.events = EPOLLIN | EPOLLOUT | EPOLLERR; // TODO EPOLLER 은 하지 않아도 될거같은데
 
             epoll.AddEvent(event, ev);
         }
@@ -79,7 +79,7 @@ namespace EventCLoop
         }
 
         void
-        async_read(std::function<void(int , char *, size_t len)> callback){
+        async_read(std::function<void(int /*fd*/, char * /*buffer*/, ssize_t /*len*/)> callback){
             using std::placeholders::_1;
             event.fd = sessionfd;
             event.pop = std::bind(&TcpConnect::async_read_pop, this, _1, callback);
@@ -91,7 +91,10 @@ namespace EventCLoop
             epoll.AddEvent(event, ev);
         }
         void
-        async_read_pop(const struct epoll_event & ev, std::function<void(int , char *, size_t len)> callback){
+        async_read_pop(
+            const struct epoll_event & ev, 
+            std::function<void(int /*fd*/, char * /*buffer*/, ssize_t /**/)> callback){
+
             ssize_t len = buffer.read_chunk(ev.data.fd);
             callback(ev.data.fd, buffer.get_buf(), len); 
         }

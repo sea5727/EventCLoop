@@ -3,6 +3,10 @@
 #include <chrono>
 #include "EventCLoop/EventCLoop.hpp"
 
+using std::placeholders::_1;
+using std::placeholders::_2;
+using std::placeholders::_3;
+
 class MyApp{
 public:
     EventCLoop::Epoll & epoll;
@@ -19,9 +23,7 @@ public:
                std::cout << "async_connect error !!" << error.what() << std::endl; 
                return;
             }
-            using std::placeholders::_1;
-            using std::placeholders::_2;
-            using std::placeholders::_3;
+
             connector.async_read(std::bind(&MyApp::read_handler, this, _1, _2, _3));
             std::cout << "this : " << (void *)this << ", async_connect handler end" << std::endl;
         });

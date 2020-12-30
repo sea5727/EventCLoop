@@ -45,7 +45,7 @@ namespace EventCLoop
         }
 
         void
-        AsyncSignal(std::function<void()> callback){
+        AsyncSignal(std::function<void(int /*signalno*/)> callback){
             using std::placeholders::_1;
             event.fd = signal_fd;
             event.pop = std::bind(&Signal::AsyncSignalPop, this, _1, callback);
@@ -56,9 +56,9 @@ namespace EventCLoop
 
             epoll.AddEvent(event, ev);
         }
-
+    private:
         void
-        AsyncSignalPop(const struct epoll_event & ev, std::function<void(int /*signal*/)> callback){
+        AsyncSignalPop(const struct epoll_event & ev, std::function<void(int /*signalno*/)> callback){
             struct signalfd_siginfo fdsi;
             int res = read(ev.data.fd , &fdsi, sizeof(fdsi));
 
@@ -72,42 +72,40 @@ namespace EventCLoop
             callback(no);
         }
 
-        void
-        CreateCore(){
-            char s_log_name[512] = { 0, };
-            auto pid = getpid();
+        // // void
+        // // CreateCore(){
+        // //     char s_log_name[512] = { 0, };
+        // //     auto pid = getpid();
 
-            snprintf(s_log_name, sizeof(s_log_name), "./down_TMF_%d.core", pid);
-            printf("[CORE] Core file path[%s] \n", s_log_name);
+        // //     snprintf(s_log_name, sizeof(s_log_name), "./down_TMF_%d.core", pid);
+        // //     printf("[CORE] Core file path[%s] \n", s_log_name);
 
-            FILE *s_log = NULL;
+        // //     FILE *s_log = NULL;
 
-            s_log = fopen(s_log_name, "w");
+        // //     s_log = fopen(s_log_name, "w");
 
-            if (!s_log) {
-                printf(" s_log == NULL -> return\n");
-                return;
-            }
+        // //     if (!s_log) {
+        // //         printf(" s_log == NULL -> return\n");
+        // //         return;
+        // //     }
 
-            printf(" s_log != NULL\n");
-            char cmd[128] = { 0, };
-            snprintf(cmd, sizeof(cmd), "/usr/bin/pstack %d", pid);
+        // //     printf(" s_log != NULL\n");
+        // //     char cmd[128] = { 0, };
+        // //     snprintf(cmd, sizeof(cmd), "/usr/bin/pstack %d", pid);
 
-            char str[512] = { 0, };
-            FILE *ptr = popen(cmd, "r");
-            printf("popen\n");
-            if (ptr != NULL) {
-                while (1) {
-                    memset(str, 0x00, sizeof(str));
-                    if (fgets(str, 512, ptr) == NULL) break;
-                    if (s_log) fprintf(s_log, "[PSTACK] %s", str);
-                }
-                pclose(ptr);
-            }
-            if (s_log) fclose(s_log);
-            printf("end\n");
-
-
-        }
+        // //     char str[512] = { 0, };
+        // //     FILE *ptr = popen(cmd, "r");
+        // //     printf("popen\n");
+        // //     if (ptr != NULL) {
+        // //         while (1) {
+        // //             memset(str, 0x00, sizeof(str));
+        // //             if (fgets(str, 512, ptr) == NULL) break;
+        // //             if (s_log) fprintf(s_log, "[PSTACK] %s", str);
+        // //         }
+        // //         pclose(ptr);
+        // //     }
+        // //     if (s_log) fclose(s_log);
+        // //     printf("end\n");
+        // // }
     };
 }

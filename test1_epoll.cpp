@@ -5,11 +5,8 @@ int main(int argc, char * argv[]){
 
     auto epoll = EventCLoop::Epoll{};
 
-    int i = 0;
     while(1){
-        std::cout << "i : " << i << std::endl;
         epoll.Run();
-        i++;
     }
     
 

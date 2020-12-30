@@ -12,6 +12,7 @@
 #include <sys/timerfd.h>
 #include <sys/types.h>
 #include <sys/signalfd.h>
+#include <sys/eventfd.h>
 #include <signal.h>
 #include <unistd.h>
 
@@ -22,6 +23,7 @@
 #include <map>
 #include <memory>
 #include <functional>
+#include <array>
 
 
 #include "Error.hpp"
@@ -33,6 +35,7 @@
 #include "TcpConnect.hpp"
 #include "Timer.hpp"
 #include "Signal.hpp"
+#include "Eventfd.hpp"
 
 
 namespace EventCLoop

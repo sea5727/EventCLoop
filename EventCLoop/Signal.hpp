@@ -5,22 +5,27 @@
 
 namespace EventCLoop
 {
+    template<int N>
     class Signal{
         Epoll & epoll;
         Event event;
         int signal_fd;
+        std::array<int, N> signals;
     public:
-        Signal(Epoll & epoll)
+        Signal(Epoll & epoll, std::array<int, N> signals)
             : epoll{epoll}
             , event{}
-            , signal_fd{-1} {
+            , signal_fd{-1}
+            , signals{signals} {
+
+            std::cout << "signals size : " << N << std::endl;
 
             sigset_t mask;
 
             sigemptyset(&mask);
 
-            for(int i = SIGHUP; i <= SIGTSTP ; ++i){
-                sigaddset(&mask, i);
+            for(auto & signal : signals){
+                sigaddset(&mask, signal);
             }
 
             int ret = sigprocmask(SIG_SETMASK, &mask, NULL);
@@ -30,7 +35,13 @@ namespace EventCLoop
             signal_fd = ::signalfd(-1, &mask, 0);
             if(signal_fd == -1)
                 throw std::runtime_error(std::string{"signalfd error "} + std::string{strerror(errno)});
+            
+            event.fd = signal_fd;
+            event.pop = nullptr;
 
+        }
+        ~Signal(){
+            
         }
 
         void
@@ -47,7 +58,7 @@ namespace EventCLoop
         }
 
         void
-        AsyncSignalPop(const struct epoll_event & ev, std::function<void()> callback){
+        AsyncSignalPop(const struct epoll_event & ev, std::function<void(int /*signal*/)> callback){
             struct signalfd_siginfo fdsi;
             int res = read(ev.data.fd , &fdsi, sizeof(fdsi));
 
@@ -55,19 +66,10 @@ namespace EventCLoop
                 throw std::runtime_error(std::string{"signal system error:"} + std::string{strerror(errno)});
             }
 
-            auto no_sig = fdsi.ssi_signo;
-            std::cout << "signal : " << no_sig << std::endl;
+            auto no = fdsi.ssi_signo;
+            std::cout << "signal : " << no << std::endl;
 
-            CreateCore();
-
-            if(no_sig == SIGINT){
-
-            }
-            else if(no_sig == SIGQUIT){
-            }
-            else {
-            }
-            exit(0);
+            callback(no);
         }
 
         void

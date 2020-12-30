@@ -30,7 +30,7 @@ while(1){
 auto p_timer = std::make_shared<EventCLoop::Timer>(epoll);
 
 p_timer->initOneTimer(1, 0); // timer ( 1sec )
-p_timer->async_wait([](EventCLoop::Error & error) mutable { // 무한 반복
+p_timer->async_wait([](EventCLoop::Error & error) {
     if(error){ // error control
         return;
     }

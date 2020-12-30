@@ -9,11 +9,32 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <netinet/tcp.h>
 
 constexpr static int EPOLL_SIZE = 1024;
 constexpr static int EPOLL_TIMEOUT = 1000;
 
+int
+create_nonblock(int fd){
+    int flags = fcntl(fd, F_GETFL, 0);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK );
+}
 
+
+/**
+ *  TCP_NODELAY : 패킷 전송시 작은 패킷들은 모아서 한꺼번에 전송하는 Nagle 알고리즘 사용 유무.
+ *                실제로 sendfile 을 360byte 전송하는데 40ms간격씩 전송하는 현상이 발생. TCP_NODELAY 옵션을 추가하여 해소.
+ */
+int
+nodelay(int fd){
+    int nOptVal = 1;
+	int ret = setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *)&nOptVal, sizeof(nOptVal));
+    if(ret == -1){
+        strerror(errno);
+        return -1;
+    }
+    return 0;
+}
 
 int main(int argc, char * argv[]){
     

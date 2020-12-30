@@ -93,7 +93,7 @@ while(1){
 ---
 ### 이 라이브러리의 단점
 1. async_write callback infinite loop
-    - socket의 write/send 함수는 비동기형식이 아닌 결과를 직접 반환하기 때문에 성공후 다시 send를 하게된다면 무한 loop에 빠짐. ( asio에서는 async_write는 어떻게 성공유무를 판단하고 callback을 전달하는것일까?? )
+    - socket의 write/send 함수는 비동기형식이 아닌 결과를 직접 반환하기 때문에 콜백함수에서 다시 send를 하게된다면 무한 loop와 stack overflow에 빠짐. ( asio에서는 async_write는 어떻게 성공유무를 판단하고 callback을 전달하는것일까?? )
 2. Error Control
     - Error 시 Exception을 throw하고 있다. error를 리턴하는 방향으로 하면 좋을듯.
     아직 구현량이 적을뿐, 혹시 재사용할경우 추가하도록 하자.

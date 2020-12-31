@@ -65,9 +65,6 @@ namespace EventCLoop
             }
             else if(ev.events & EPOLLIN){ // already connected ?? 
                 std::cout << "[CONNECT] EPOLLIN ? \n";
-                // // make_sockaddr_struct(server_addr);
-                // // auto ret = ::connect(sessionfd,  (struct sockaddr *)&server_addr, sizeof(server_addr));
-                // // auto error = Error{strerror(errno)};
                 clear_session();
                 callback(error);
             }
@@ -109,7 +106,11 @@ namespace EventCLoop
 
 
         void
-        async_writev(const struct iovec *iovecs, int count, std::function<void(Error & /*error*/, int /*fd*/, ssize_t /*len */)> callback){
+        async_writev(
+            const struct iovec *iovecs, 
+            int count, 
+            std::function<void(Error & /*error*/, int /*fd*/, size_t /*len */)> callback){
+
             Error error;
             auto result = writev(sessionfd, iovecs, count);
             if(result == -1){
@@ -119,7 +120,11 @@ namespace EventCLoop
         }
 
         void
-        async_write(void * data, size_t len, std::function<void(Error & /*error*/, int /*fd*/, ssize_t /*len */)> callback){
+        async_write(
+            void * data, 
+            size_t len, 
+            std::function<void(Error & /*error*/, int /*fd*/, size_t /*len */)> callback){
+
             Error error;
             auto result = write(sessionfd, data, len);
             if(result == -1){
@@ -129,7 +134,10 @@ namespace EventCLoop
         }
 
         void
-        make_sockaddr_struct(struct sockaddr_in & server_addr, const std::string & ip, const uint16_t port){
+        make_sockaddr_struct(
+            struct sockaddr_in & server_addr, 
+            const std::string & ip, 
+            const uint16_t port){
             if(inet_pton(AF_INET, ip.c_str(), &server_addr.sin_addr) <= 0){
                 throw std::logic_error("socket create fail" + std::string{strerror(errno)});
             }

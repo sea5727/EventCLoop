@@ -32,6 +32,7 @@
 #include "Epoll.hpp"
 #include "Acceptor.hpp"
 #include "TcpSession.hpp"
+#include "TcpConnector.hpp"
 #include "TcpConnect.hpp"
 #include "Timer.hpp"
 #include "Signal.hpp"

@@ -10,7 +10,6 @@ namespace EventCLoop
         int sessionfd;
         std::string ip;
         uint16_t port;
-        int flag = 0;
     public:
         TcpConnector(Epoll & epoll)
             : epoll{epoll}
@@ -45,26 +44,22 @@ namespace EventCLoop
 
             std::cout << "try connect " << std::endl;
             auto ret = ::connect(sessionfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-            if(ret == -1){
-                std::cout << "async_connect ret == -1, errno : " << errno << std::endl;
-                ECONNREFUSED;
-            }
-            else {
-                std::cout << "async_connect ret : " << ret << ", errno : " << errno << std::endl;
-                ECONNREFUSED;
-            }
 
+            if(ret == 0){
+                Error error;
+                callback(error, sessionfd);
+                return;
+            }
             
             event.fd = sessionfd;
             event.pop = std::bind(&TcpConnector::async_connect_pop, this, _1, callback);
 
             struct epoll_event ev;
             ev.data.fd = sessionfd;
-            ev.events = EPOLLIN | EPOLLOUT | EPOLLERR; // TODO EPOLLER 은 하지 않아도 될거같은데
+            ev.events = EPOLLIN | EPOLLOUT; 
 
             epoll.AddEvent(event, ev);
             
-            flag++;
         }
         
     private:
@@ -82,7 +77,8 @@ namespace EventCLoop
                 int nerror = 0; 
                 socklen_t len = sizeof( nerror ); 
                 if( getsockopt(ev.data.fd, SOL_SOCKET, SO_ERROR, &nerror, &len) < 0 ) {  // 111 : ECONNREFUSED
-                    error = Error{strerror(errno)};
+                    // EWOULDBLOCK;
+                    error = Error{strerror(errno)}; 
                     epoll.DelEvent(ev.data.fd);
                     close(ev.data.fd);
                     event.clear();
@@ -90,13 +86,6 @@ namespace EventCLoop
                     return;
                 }
                 
-                /*
-                정리
-                1. 비동기 connect 실패시 error를 사용하지 말고, gstsockopt 를 사용해라.
-                2. 비동기 connect 실패시 소켓을 close하고 재접속해라.
-                   ( close하지않고 소켓을 재사용할 경우, connect를 한번더 호출 해주어야 다음 connect시 reconnect 가능.)
-                **/
-
                 error = Error{strerror(nerror)};
                 epoll.DelEvent(ev.data.fd);
                 close(ev.data.fd);

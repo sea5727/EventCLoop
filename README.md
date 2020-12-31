@@ -78,8 +78,56 @@ while(1){
 ```
 
 ### 5. Socket
+
+### connect :    
+
+non-blocking 인경우 connect 호출시 -1 을 리턴한다. epoll_event를 EPOLLIN | EPOLLOUT 으로 등록하면된다.   
+connect 실패인경우 EPOLLERR 를 포함하는데, getsockopt 으로 에러정보를 알아내야한다.   
+또한 reconnect를 시도할경우 소켓을 재사용한다면 connect를 한번 더 임의로 호출해줘야한다.    
+2번째로 호출되는 connect는 실제로 connect를 요청하지않고 ECONNABORTED 에러를 발생하였다.   
+또한 connect timeout을 확인하기위해서는 nonblocking 으로 connect 요청후 select 로 대기하여야하는데 이또한 블럭이 되기때문에 다른방안을 모색해야한다.
+
 ```cpp
+auto ret = ::connect(sessionfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+
+struct epoll_event ev;
+ev.data.fd = sessionfd;
+ev.events = EPOLLIN | EPOLLOUT;
+
+if(epoll_ctl(epollfd, EPOLL_CTL_ADD, sessionfd, &ev) == -1){
+    return; // epoll_ctl fail
+}
+...
+epoll_wait
+...
+if(ev.events & EPOLLERR){ // fail connect
+    int nerror = 0; 
+    socklen_t len = sizeof( nerror ); 
+    if( getsockopt(ev.data.fd, SOL_SOCKET, SO_ERROR, &nerror, &len) < 0 ) {  // 111 : 
+        return; // getsockopt fail
+    }
+
+    close(ev.data.fd);
+}
+else{
+    struct epoll_event ev;
+    ev.data.fd = sessionfd;
+    ev.events = EPOLLIN;
+    epoll_ctl(epollfd, EPOLL_CTL_MOD, ev.data.fd, &ev); // for read/recv
+}
 ```
+### write :
+send buffer가 충분한경우 write함수는 항상 성공한다.   
+send buffer가 부족한경우, write함수의 리턴값은 전송한 길이만큼이다. 따라서 이경우 추가로 전송해주는 로직이 필요하다.   
+또한 TCP_NODELAY 옵션을 사용하도록 한다. 약 40ms 정도의 Nagel 알고리즘 텀이 존재하는것을 확인했다.
+```cpp
+auto result = write(sessionfd, data, len);
+if(result == -1){
+    sleep_for(milliseconds(100));
+    write(sessionfd, data + result, len - result);
+}
+```
+
 
 
 ---
@@ -101,4 +149,4 @@ while(1){
 ### 비고
 
 boost asio 를 공부하고 사용하면서 익힌 내용을 직접 구현해보는것에 의의를 둠.   
-다만 괜찮게 성능이 나와서 만족함 ( 다른 프로젝트에도 재사용이 가능할것같다 )
+다른 프로젝트에도 재사용이 가능할것같다.

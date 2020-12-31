@@ -57,7 +57,7 @@ do_read(EventCLoop::Epoll & epoll, EventCLoop::TcpConnector & connector, std::sh
 
 void
 do_connect(EventCLoop::Epoll & epoll, EventCLoop::TcpConnector & connector){
-    connector.async_connect("192.168.0.136", 12345, 
+    connector.async_connect("192.168.0.35", 12345, 
         [&](EventCLoop::Error & error , int fd){
             if(error){
                 std::cout << "connecct callback fail " << error.what() << std::endl;

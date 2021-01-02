@@ -16,7 +16,7 @@
 ---
 ### 1. Epoll
 ```cpp
-#include "EventCLoop/EventCLoop.hpp"
+#include "EventCLoop.hpp"
 auto epoll = EventCLoop::Epoll{};
 
 while(1){
@@ -25,7 +25,7 @@ while(1){
 ```
 ### 2. Timer
 ```cpp
-#include "EventCLoop/EventCLoop.hpp"
+#include "EventCLoop.hpp"
 
 auto p_timer = std::make_shared<EventCLoop::Timer>(epoll);
 

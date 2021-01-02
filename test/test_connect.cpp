@@ -1,7 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
-#include "EventCLoop/EventCLoop.hpp"
+#include "EventCLoop.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;

@@ -1,4 +1,4 @@
-#include "EventCLoop/EventCLoop.hpp"
+#include "EventCLoop.hpp"
 
 int main(int argc, char * argv[]){
     std::cout << "[TEST1] EPOLL " << std::endl;

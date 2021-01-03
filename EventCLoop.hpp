@@ -26,7 +26,7 @@
 #include <functional>
 #include <array>
 
-
+#include "Util.hpp"
 #include "Error.hpp"
 #include "Event.hpp"
 #include "TcpBuffer.hpp"

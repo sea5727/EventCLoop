@@ -6,6 +6,8 @@
 #include "Epoll.hpp"
 #include "Event.hpp"
 
+#include <sched.h>
+
 namespace EventCLoop
 {
     class Timer{
@@ -21,13 +23,21 @@ namespace EventCLoop
             if(timerfd == -1)
                 throw std::runtime_error("timerfd_create fail " + std::string{strerror(errno)});
             std::cout << "[TIMER] fd : " << timerfd << std::endl;
+
+            // struct sched_param schedparm;
+
+            // memset(&schedparm, 0, sizeof(schedparm));
+            // schedparm.sched_priority = 1; // lowest rt priority
+            // sched_setscheduler(0, SCHED_FIFO, &schedparm);
         }
         ~Timer(){
             std::cout << "[TIMER] Delete Timer...fd:" << event.fd << std::endl;
             if(!event.isCleared()){
+                std::cout << "[TIMER] not Clear.. -> DelEvent, clear, close.. :" << event.fd << std::endl;
                 epoll.DelEvent(event.fd);
-                event.clear();
                 close(event.fd);
+                event.clear();
+                
             }
             
         }
@@ -81,7 +91,7 @@ namespace EventCLoop
     private:
         void
         epoll_pop(const struct epoll_event & ev, std::function<void(Error & )> callback){
-            std::cout << "[TIMER] poll pop!!  ev : " << ev.events << std::endl;
+            std::cout << "[TIMER] poll pop!! fd:" << ev.data.fd << ", ev : " << ev.events << std::endl;
 
             Error error;
             if(ev.events & EPOLLERR){
@@ -91,12 +101,15 @@ namespace EventCLoop
                 uint64_t res;
                 int ret = read(ev.data.fd, &res, sizeof(uint64_t));
             }
-
-            epoll.DelEvent(timerfd);
-            event.clear();
-            close(ev.data.fd);
-
+            
             callback(error);
+
+            epoll.DelEvent(ev.data.fd);
+            close(ev.data.fd);
+            event.clear();
+            
+
+            
             
         }
 

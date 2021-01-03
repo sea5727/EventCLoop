@@ -74,6 +74,10 @@ namespace EventCLoop
                 callback();
             }
 
+            epoll.DelEvent(ev.data.fd);
+            close(ev.data.fd);
+            event.clear();
+
             
         }
 

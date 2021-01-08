@@ -29,6 +29,7 @@ namespace EventCLoop
 
             sessionfd = socket(AF_INET, SOCK_STREAM, 0);
             if(sessionfd < 0){
+
                 throw std::logic_error("socket create fail" + std::string{strerror(errno)});
             }
 
@@ -53,6 +54,7 @@ namespace EventCLoop
             auto ret = ::connect(sessionfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
 
             if(ret == 0){
+                auto eventfd = Eventfd{epoll};
                 Error error;
                 callback(error, sessionfd);
                 return;

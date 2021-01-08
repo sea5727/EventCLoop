@@ -4,6 +4,8 @@ project(simple-message-queue VERSION 0.1.0)
 set(CMAKE_CXX_STANDARD_REQUIRED on)
 set(CMAKE_CXX_STANDARD 17)
 
+ADD_COMPILE_OPTIONS( -Wall )
+# SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-variable -Wno-unused-parameter")
 
 include(CTest)
 enable_testing()

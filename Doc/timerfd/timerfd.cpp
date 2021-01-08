@@ -70,7 +70,6 @@ int main(int argc, char * argv[]){
 
     struct epoll_event ev[EPOLL_SIZE];
 
-    int flag = 0;
     while(1){
         auto count = epoll_wait(epollfd, ev, EPOLL_SIZE, EPOLL_TIMEOUT);
         for(int i = 0 ; i < count ; ++i){

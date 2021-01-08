@@ -42,7 +42,7 @@ namespace EventCLoop
             struct sockaddr_in server_addr;
             make_sockaddr_struct(server_addr, ip, port);
 
-            auto ret = ::connect(sessionfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+            ::connect(sessionfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
 
             event.fd = sessionfd;
             using std::placeholders::_1;
@@ -57,7 +57,6 @@ namespace EventCLoop
 
         void
         async_connect_pop(const struct epoll_event & ev, std::function<void(Error & )> callback){
-            struct sockaddr_in server_addr;
             auto error = Error{};
             if(ev.events & EPOLLERR){
                 std::cout << "[CONNECT] ERROR ? \n";

@@ -22,13 +22,6 @@ namespace EventCLoop
             timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
             if(timerfd == -1)
                 throw std::runtime_error("timerfd_create fail " + std::string{strerror(errno)});
-            std::cout << "[TIMER] fd : " << timerfd << std::endl;
-
-            // struct sched_param schedparm;
-
-            // memset(&schedparm, 0, sizeof(schedparm));
-            // schedparm.sched_priority = 1; // lowest rt priority
-            // sched_setscheduler(0, SCHED_FIFO, &schedparm);
         }
         ~Timer(){
             std::cout << "[TIMER] Delete Timer...fd:" << event.fd << std::endl;
@@ -100,6 +93,8 @@ namespace EventCLoop
             else {
                 uint64_t res;
                 int ret = read(ev.data.fd, &res, sizeof(uint64_t));
+                if(ret < 0)
+                    error = Error{strerror(errno)};
             }
             
             callback(error);

@@ -17,7 +17,8 @@ constexpr static int EPOLL_TIMEOUT = 1000;
 int
 create_nonblock(int fd){
     int flags = fcntl(fd, F_GETFL, 0);
-    fcntl(fd, F_SETFL, flags | O_NONBLOCK );
+    int ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK );
+    return ret;
 }
 
 
@@ -67,7 +68,7 @@ int main(int argc, char * argv[]){
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
 
-    auto ret = ::connect(sessionfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    ::connect(sessionfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
 
     auto connect_epoll = epoll_create1(0);
     std::cout << "connect_epoll : " << connect_epoll << std::endl;
@@ -88,7 +89,7 @@ int main(int argc, char * argv[]){
     struct epoll_event ev[EPOLL_SIZE];
     struct epoll_event ev2[EPOLL_SIZE];
 
-    int flag = 0;
+    // int flag = 0;
     while(1){
         auto count = epoll_wait(epollfd, ev, EPOLL_SIZE, EPOLL_TIMEOUT);
         for(int i = 0 ; i < count ; ++i){

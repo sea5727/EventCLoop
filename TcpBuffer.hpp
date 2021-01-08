@@ -77,8 +77,8 @@ namespace EventCLoop
             int rbytes = 0;
             while(1){
                 rbytes = recv(fd, pbuf + writer, capacity - writer, 0);
-                if((rbytes <= 0) && errno == EINTR || 
-                    (rbytes <= 0) &&  errno == EAGAIN)
+                if(((rbytes <= 0) && errno == EINTR) || 
+                    ((rbytes <= 0) &&  errno == EAGAIN))
                     continue;
                 else if (rbytes < 0) {
                     return -1;

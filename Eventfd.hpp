@@ -69,7 +69,7 @@ namespace EventCLoop
             uint64_t res;
             int ret = read(event_fd, &res, sizeof(uint64_t));
             std::cout << "SendEventPop : " << ret << ", res : " << res << std::endl;
-            for(int i = 0; i < res ; ++i){
+            for(uint64_t i = 0; i < res ; ++i){
                 callback();
             }
 

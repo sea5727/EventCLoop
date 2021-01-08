@@ -93,7 +93,6 @@ int main(int argc, char * argv[]){
     struct epoll_event ev[1024];
     while(1){
 
-        EAGAIN;
         auto count = epoll_wait(epollfd, ev, 1024, 1000);
         for(int i = 0 ; i < count ; ++i){
             std::cout << "[" << i << "] Epoll event.. event: " << ev[i].events << std::endl;

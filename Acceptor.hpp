@@ -8,8 +8,9 @@ namespace EventCLoop
     class Acceptor {
         Epoll & epoll;
         Event event;
-        std::string ip;
         uint16_t port;
+        std::string ip;
+        
         int listenfd;
 
         bool reuse;

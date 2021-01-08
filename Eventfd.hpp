@@ -34,7 +34,6 @@ namespace EventCLoop
 
         }
         ~Eventfd(){
-            std::cout << "Destructor Eventfd " << std::endl;
             if(!event.isCleared()){
                 epoll.DelEvent(event.fd);
                 close(event.fd);
@@ -78,6 +77,7 @@ namespace EventCLoop
             close(ev.data.fd);
             event.clear();
 
+            std::cout << "SendEventPop : end"  << std::endl;
             
         }
 

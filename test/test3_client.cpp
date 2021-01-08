@@ -1,6 +1,8 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+
+
 #include "EventCLoop.hpp"
 
 using std::placeholders::_1;
@@ -22,12 +24,16 @@ public:
         
     void
     run(){
+        std::cout << "run!! try async_connect" << std::endl;
         connector.async_connect(ip, port, [this](EventCLoop::Error & error, int fd){
+            std::cout << "async_connect " << error.what() << std::endl; 
             if(error){
                std::cout << "async_connect error !!" << error.what() << std::endl; 
                auto timer = std::make_shared<EventCLoop::Timer>(epoll);
                timer->initOneTimer(1, 0);
+               std::cout << "timer start" << error.what() << std::endl; 
                timer->async_wait([timer, this](EventCLoop::Error & error){
+                   std::cout << "timer callabck???" << error.what() << std::endl; 
                    if(error){
                        //timer fail
                    }
@@ -71,10 +77,12 @@ public:
 };
 int main(int argc, char * argv[]){
     auto epoll = EventCLoop::Epoll{};
+    // auto myapp = MyApp{epoll, "192.168.0.35", 12345};
     auto myapp = MyApp{epoll, "223.130.195.95", 12345};
     myapp.run();
 
     while(1){
+        std::cout << "main worker run" << std::endl;
         epoll.Run();
     }
     return 0;

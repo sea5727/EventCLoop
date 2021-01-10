@@ -32,7 +32,7 @@
 #include "Error.hpp"
 
 
-#include "TcpBuffer.hpp"
+#include "Buffer.hpp"
 #include "Epoll.hpp"
 #include "Event.hpp"
 #include "Eventfd.hpp"

@@ -16,8 +16,10 @@
 
 namespace EventCLoop
 {
-    class TcpBuffer{
+    class Buffer{
+
     private:
+        // TYPE type;
         constexpr static int DEFUALT_SIZE = 16 * 1024;
         int capacity = 0;
         int reader = 0;
@@ -25,10 +27,10 @@ namespace EventCLoop
         ssize_t read_len = 0;
         char *pbuf = nullptr;
     public:
-        TcpBuffer(int capacity = DEFUALT_SIZE)
+        Buffer(int capacity = DEFUALT_SIZE)
             : capacity{capacity} { }
 
-        ~TcpBuffer(){
+        ~Buffer(){
             free_chunk();
         }
 
@@ -76,7 +78,9 @@ namespace EventCLoop
             
             int rbytes = 0;
             while(1){
-                rbytes = recv(fd, pbuf + writer, capacity - writer, 0);
+                rbytes = read(fd, pbuf + writer, capacity - writer);
+                // rbytes = recv(fd, pbuf + writer, capacity - writer, 0);
+                // printf("fd:%d rbytes:%d, errno:%d \n", fd, rbytes, errno);
                 if(((rbytes <= 0) && errno == EINTR) || 
                     ((rbytes <= 0) &&  errno == EAGAIN))
                     continue;

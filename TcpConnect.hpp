@@ -7,7 +7,7 @@ namespace EventCLoop
     class TcpConnect{
     public:
         Epoll & epoll;
-        TcpBuffer buffer;
+        Buffer buffer;
         Event event;
         uint16_t port;
         std::string ip;

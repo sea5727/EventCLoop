@@ -9,7 +9,7 @@ namespace EventCLoop
         Epoll & epoll;
         Event event;
         int sessionfd;
-        TcpBuffer buffer;
+        Buffer buffer;
 
         TcpSession(Epoll & epoll, int sessionfd)
             : epoll{epoll}

@@ -17,10 +17,12 @@
 #include <signal.h>
 #include <unistd.h>
 #include <future>
+#include <algorithm>
 #include <iostream>
 #include <exception>
 #include <stdexcept>
 #include <string>
+#include <vector>
 #include <map>
 #include <memory>
 #include <functional>

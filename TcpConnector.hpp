@@ -120,11 +120,18 @@ namespace EventCLoop
             tv.tv_sec = 5;
             tv.tv_usec = 0;
             FD_ZERO(&fdset); 
-            FD_SET(sessionfd, &fdset); 
+            FD_SET(sessionfd, &fdset);
             auto ret = select(sessionfd+1, NULL, &fdset, NULL, &tv); 
             if(ret < 0){
                 close(sessionfd);
                 auto error = Error{strerror(errno)};
+                async_connect_error_pop_conns_clear(error, callback);
+                return;
+            }
+
+            if(ret == 0){
+                close(sessionfd);
+                auto error = Error{"Connection Timeout"};
                 async_connect_error_pop_conns_clear(error, callback);
                 return;
             }
@@ -145,10 +152,9 @@ namespace EventCLoop
                 return;
             }
 
-            close(sessionfd);
-            auto error = Error{"Connection Timeout"};
+            auto error = Error();
             async_connect_error_pop_conns_clear(error, callback);
-            return;
+
         }
 
         void 

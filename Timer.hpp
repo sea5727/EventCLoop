@@ -19,10 +19,21 @@ namespace EventCLoop
             : epoll{epoll}
             , event{}
             , timerfd{-1} {
-            timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
-            if(timerfd == -1)
-                throw std::runtime_error("timerfd_create fail " + std::string{strerror(errno)});
+
+            Error error;
+            Init(error);
+            if(error) throw error;
         }
+
+        Timer(Epoll & epoll, Error & error)
+            : epoll{epoll}
+            , event{}
+            , timerfd{-1} {
+            
+            Init(error);
+
+        }
+
         ~Timer(){
             std::cout << "[TIMER] Delete Timer...fd:" << event.fd << std::endl;
             if(!event.isCleared()){
@@ -37,18 +48,29 @@ namespace EventCLoop
 
         void
         initOneTimer(unsigned int sec, unsigned int nsec){
+            Error error;
+            initOneTimer(sec, nsec, error);
+            if(error) throw error;
+        }
+
+        void
+        initOneTimer(unsigned int sec, unsigned int nsec, Error & error) noexcept {
+            if(nsec > 1'000'000'000){
+                sec += nsec % 1'000'000'000;
+                nsec /= 1'000'000'000;
+            }
             
             struct itimerspec ts;
-            memset(&ts, 0, sizeof(struct itimerspec));
             ts.it_interval.tv_sec = 0;
             ts.it_interval.tv_nsec = 0;
             ts.it_value.tv_sec = sec;
             ts.it_value.tv_nsec = nsec;
 
             if(timerfd_settime(timerfd, 0, &ts, NULL) < 0){
-                throw std::runtime_error("timerfd_settime fail " + std::string{strerror(errno)});
+                error = Error{std::string{"timerfd_settime fail : "} + strerror(errno)};
             }
         }
+
         [[deprecated("don't use")]]
         void
         initIntervalTimer(
@@ -68,6 +90,8 @@ namespace EventCLoop
                 throw std::runtime_error("timerfd_settime fail " + std::string{strerror(errno)});
             }
         }
+
+
         void
         async_wait(std::function<void(Error & )> callback){
             using std::placeholders::_1;
@@ -78,7 +102,15 @@ namespace EventCLoop
             ev.data.fd = timerfd;
             ev.events = EPOLLIN;
 
-            epoll.AddEvent(event, ev);
+            Error error;
+            epoll.AddEvent(event, ev, error);
+            if(error) {
+                auto event_fd = Eventfd{epoll};
+                event_fd.SendEvent([callback, error]{
+                    auto errro_ = error;
+                    callback(errro_);
+                });
+            }
         }
 
     private:
@@ -102,10 +134,13 @@ namespace EventCLoop
             epoll.DelEvent(ev.data.fd);
             close(ev.data.fd);
             event.clear();
-            
-
-            
-            
+        }
+        
+        void
+        Init(Error & error) {
+            timerfd = timerfd_create(CLOCK_MONOTONIC, 0);
+            if(timerfd == -1)
+                error = Error{std::string{"timerfd_create fail "} + strerror(errno)};
         }
 
 

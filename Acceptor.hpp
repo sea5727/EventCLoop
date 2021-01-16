@@ -10,9 +10,7 @@ namespace EventCLoop
         Event event;
         uint16_t port;
         std::string ip;
-        
         int listenfd;
-
         bool reuse;
         bool nodelay;
         

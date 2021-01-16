@@ -12,11 +12,11 @@ namespace EventCLoop
         Error(const std::string & what)
             : msg{what}
             , flag{true} {}
-
+        
         operator bool() const{
             return flag;
         }
-        const char * what() const {
+        const char * what() const noexcept{
             return msg.c_str();
         }
     };

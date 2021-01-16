@@ -19,8 +19,6 @@ namespace EventCLoop
 
 
         ~TcpSession(){
-            // std::cout << "default TcpSession Delete\n";
-            // epoll.DelEvent(sessionfd);
             if(!event.isCleared()){
                 epoll.DelEvent(event.fd);
                 close(event.fd);

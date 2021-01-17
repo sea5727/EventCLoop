@@ -5,9 +5,6 @@
 
 
 int main(int argc, char * argv[]){
-#ifndef DEBUG
-    std::cout.setstate(std::ios_base::failbit);
-#endif
 
     auto threadpool = std::vector<std::thread>{};
 
@@ -19,8 +16,10 @@ int main(int argc, char * argv[]){
             
             std::cout << "[Id:" << std::this_thread::get_id() <<  "] sleep_for 1" << std::endl;
             event_fd.SendEvent([]{ // main thread 에서 실행된다.
-                std::cout << "[Id:" << std::this_thread::get_id() << "] send event!! " << std::endl;
-                std::cerr << "Send Event !!" << std::endl;
+                std::cout << "Send Event !! 1" << std::endl;
+            });
+            event_fd.SendEvent([]{ // main thread 에서 실행된다.
+                std::cerr << "Send Event !! 2"  << std::endl;
             });
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }

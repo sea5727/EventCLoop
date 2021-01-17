@@ -16,7 +16,10 @@ class MyApp{
     std::string ip;
     uint16_t port;
 public:
-    MyApp(EventCLoop::Epoll & epoll, const std::string & ip, const uint16_t port)
+    MyApp(
+        EventCLoop::Epoll & epoll, 
+        const std::string & ip, 
+        const uint16_t port)
         : epoll{epoll}
         , connector{epoll}
         , ip{ip}
@@ -41,6 +44,7 @@ public:
                });
                return;
             }
+            std::cout << "async_connect success.. fd : " << fd << std::endl;
 
             using std::placeholders::_1;
             using std::placeholders::_2;
@@ -77,8 +81,8 @@ public:
 };
 int main(int argc, char * argv[]){
     auto epoll = EventCLoop::Epoll{};
-    // auto myapp = MyApp{epoll, "192.168.0.35", 12345};
-    auto myapp = MyApp{epoll, "223.130.195.95", 12345};
+    auto myapp = MyApp{epoll, "192.168.0.35", 12345};
+    // auto myapp = MyApp{epoll, "223.130.195.95", 12345};
     myapp.run();
 
     while(1){

@@ -12,38 +12,26 @@ namespace EventCLoop
 {
     class Timer{
         Epoll & epoll;
-        Event event;
-        int timerfd;
+        int timerfd = -1;
     public:
+        Timer() = default;
         Timer(Epoll & epoll)
-            : epoll{epoll}
-            , event{}
-            , timerfd{-1} {
-
+            : epoll{epoll} {
             Error error;
             Init(error);
             if(error) throw error;
         }
 
-        Timer(Epoll & epoll, Error & error)
-            : epoll{epoll}
-            , event{}
-            , timerfd{-1} {
-            
+        Timer(Epoll & epoll, Error & error) noexcept
+            : epoll{epoll} {
             Init(error);
-
         }
 
         ~Timer(){
-            std::cout << "[TIMER] Delete Timer...fd:" << event.fd << std::endl;
-            if(!event.isCleared()){
-                std::cout << "[TIMER] not Clear.. -> DelEvent, clear, close.. :" << event.fd << std::endl;
-                epoll.DelEvent(event.fd);
-                close(event.fd);
-                event.clear();
-                
+            if(timerfd != -1){
+                epoll.DelEvent(timerfd);
+                close(timerfd);
             }
-            
         }
 
         void
@@ -95,6 +83,7 @@ namespace EventCLoop
         void
         async_wait(std::function<void(Error & )> callback){
             using std::placeholders::_1;
+            auto event = Event{};
             event.fd = timerfd;
             event.pop = std::bind(&Timer::epoll_pop, this, _1, callback);
 
@@ -105,8 +94,8 @@ namespace EventCLoop
             Error error;
             epoll.AddEvent(event, ev, error);
             if(error) {
-                auto event_fd = Eventfd{epoll};
-                event_fd.SendEvent([callback, error]{
+                auto event_fd = std::make_shared<Eventfd>(epoll);
+                event_fd->SendEvent([callback, error, event_fd]{
                     auto errro_ = error;
                     callback(errro_);
                 });
@@ -116,9 +105,14 @@ namespace EventCLoop
     private:
         void
         epoll_pop(const struct epoll_event & ev, std::function<void(Error & )> callback){
-            std::cout << "[TIMER] poll pop!! fd:" << ev.data.fd << ", ev : " << ev.events << std::endl;
 
             Error error;
+            if(ev.data.fd != timerfd){
+                epoll.DelEvent(ev.data.fd);
+                close(ev.data.fd);
+                return;
+            }
+
             if(ev.events & EPOLLERR){
                 error = Error{strerror(errno)};
             }
@@ -131,9 +125,9 @@ namespace EventCLoop
             
             callback(error);
 
-            epoll.DelEvent(ev.data.fd);
-            close(ev.data.fd);
-            event.clear();
+            epoll.DelEvent(timerfd);
+            close(timerfd);
+            timerfd = -1;
         }
         
         void

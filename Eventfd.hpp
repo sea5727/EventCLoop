@@ -7,43 +7,19 @@ namespace EventCLoop
     class Eventfd{
     public:
         Epoll & epoll;
-        int event_fd;
-        Event event;
     public:
         Eventfd(Epoll & epoll)
-            : epoll{epoll}
-            , event_fd{-1}
-            , event{} {
-
-            std::cout << "[Eventfd] create eventfd : " << event_fd << std::endl;
-
-            event_fd = eventfd(0, EFD_NONBLOCK);
-            if(event_fd == -1)
-                throw std::runtime_error(std::string{"eventfd create fail "} + std::string{strerror(errno)});
-
-            std::cout << "[Eventfd] create eventfd : " << event_fd << std::endl;
-
-            event.fd = event_fd;
-            event.pop = nullptr;
-
-            struct epoll_event ev;
-            ev.data.fd = event_fd;
-            ev.events = EPOLLIN;
-
-            epoll.AddEvent(event, ev);
-
-        }
-        ~Eventfd(){
-            if(!event.isCleared()){
-                epoll.DelEvent(event.fd);
-                close(event.fd);
-                event.clear();
-            }
-        }
+            : epoll{epoll} { }
 
         void
         SendEvent(std::function<void()> callback){
-            std::cout << "[Eventfd] SendEvent event_fd :" << event_fd << std::endl;
+            
+            auto event_fd = eventfd(0, EFD_NONBLOCK);
+            if(event_fd == -1){
+                // error = Error{std::string{"eventfd create fail :"} + strerror(errno)};
+                return;
+            }
+
             uint64_t count = 1;
             Error error;
             ssize_t ret = write(event_fd, &count, sizeof(uint64_t));
@@ -52,6 +28,7 @@ namespace EventCLoop
             }
 
             using std::placeholders::_1;
+            auto event = Event{};
             event.fd = event_fd;
             event.pop = std::bind(&Eventfd::SendEventPop, this, _1, callback);
 
@@ -59,26 +36,25 @@ namespace EventCLoop
             ev.data.fd = event_fd;
             ev.events = EPOLLIN ;
 
-            epoll.ModEvent(event_fd, ev);
-
+            epoll.AddEvent(event, ev);
         }
 
         void
         SendEventPop(const struct epoll_event & ev, std::function<void()> callback){
-            std::cout << "[Eventfd] SendEventPop event_fd :" << event_fd << std::endl;
+            
             uint64_t res;
-            int ret = read(event_fd, &res, sizeof(uint64_t));
-            std::cout << "SendEventPop : " << ret << ", res : " << res << std::endl;
+            int ret = read(ev.data.fd, &res, sizeof(uint64_t));
+            if(ret == -1){
+                epoll.DelEvent(ev.data.fd);
+                close(ev.data.fd);
+                return;
+            }
+
             for(uint64_t i = 0; i < res ; ++i){
                 callback();
             }
 
-            epoll.DelEvent(ev.data.fd);
-            close(ev.data.fd);
-            event.clear();
 
-            std::cout << "SendEventPop : end"  << std::endl;
-            
         }
 
     };

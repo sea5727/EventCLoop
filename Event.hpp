@@ -12,10 +12,6 @@ namespace EventCLoop
         Event()
             : fd{-1}
             , pop{nullptr} {}
-        ~Event(){
-            std::cout << "~Event Delete\n";
-        }
-
         bool
         isCleared(){
             if(fd == -1) 

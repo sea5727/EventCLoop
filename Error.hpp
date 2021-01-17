@@ -13,6 +13,11 @@ namespace EventCLoop
             : msg{what}
             , flag{true} {}
         
+        void
+        clear(){
+            flag = false;
+            msg = "";
+        }
         operator bool() const{
             return flag;
         }

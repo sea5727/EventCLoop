@@ -7,28 +7,23 @@ namespace EventCLoop
     class TcpSession{
     public:
         Epoll & epoll;
-        Event event;
         int sessionfd;
         Buffer buffer;
 
         TcpSession(Epoll & epoll, int sessionfd)
             : epoll{epoll}
-            , event{}
             , sessionfd{sessionfd}
             , buffer{} {  }
 
 
         ~TcpSession(){
-            if(!event.isCleared()){
-                epoll.DelEvent(event.fd);
-                close(event.fd);
-                event.clear();
-            }
+            clear_session();
         }
 
         void
         async_read(std::function<void(int, char *, size_t len)> callback){
             using std::placeholders::_1;
+            auto event = Event{};
             event.fd = sessionfd;
             event.pop = std::bind(&TcpSession::async_read_pop, this, _1, callback);
 
@@ -48,10 +43,9 @@ namespace EventCLoop
         }
         void
         clear_session(){
-            if(!event.isCleared()){
-                epoll.DelEvent(event.fd);
-                close(event.fd);
-                event.clear();
+            if(sessionfd != -1){
+                close(sessionfd);
+                sessionfd = -1;
             }
         }
         void
@@ -81,16 +75,5 @@ namespace EventCLoop
             callback(error, sessionfd, result);
         }
 
-        void
-        make_sockaddr_struct(
-            struct sockaddr_in & server_addr, 
-            const std::string & ip, 
-            const uint16_t port){
-            if(inet_pton(AF_INET, ip.c_str(), &server_addr.sin_addr) <= 0){
-                throw std::logic_error("socket create fail" + std::string{strerror(errno)});
-            }
-            server_addr.sin_family = AF_INET;
-            server_addr.sin_port = htons(port);
-        }
     };
 }

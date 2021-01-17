@@ -7,17 +7,15 @@ namespace EventCLoop
 {
     class Acceptor {
         Epoll & epoll;
-        Event event;
         uint16_t port;
         std::string ip;
         int listenfd;
-        bool reuse;
-        bool nodelay;
+        bool reuse = true;
+        bool nodelay = true;
         
     public:
-        Acceptor(Epoll & epoll, uint16_t port, const std::string ip, bool reuse = true, bool nodelay = true)
+        Acceptor(Epoll & epoll, uint16_t port, const std::string & ip)
             : epoll{epoll}
-            , event{}
             , port{port}
             , ip{ip}
             , listenfd{-1}
@@ -26,7 +24,7 @@ namespace EventCLoop
             
             listenfd = socket(AF_INET, SOCK_STREAM, 0);
             if(listenfd == -1){
-                throw std::logic_error(std::string{"Acceptor socket error : "} + std::string{strerror(errno)});
+                throw std::logic_error(std::string{"Acceptor socket error : "} + strerror(errno));
             }
 
             if(reuse) {
@@ -38,6 +36,8 @@ namespace EventCLoop
                 int nOptVal = 1;
                 int ret = setsockopt(listenfd, IPPROTO_TCP, TCP_NODELAY, (char *)&nOptVal, sizeof(nOptVal));
                 if(ret == -1){
+                    close(listenfd);
+                    listenfd = -1;
                     throw std::logic_error(std::string{"Acceptor setsockopt error : "} + std::string{strerror(errno)});
                 }                
             }
@@ -52,18 +52,27 @@ namespace EventCLoop
 
             if(bind(listenfd, (struct sockaddr *)&_server_addr, sizeof(_server_addr)) == -1) {
                 close(listenfd);
+                listenfd = -1;
                 throw std::logic_error(std::string{"Acceptor bind error : "} + std::string{strerror(errno)});
             }
 
             if(listen(listenfd, 5) == -1) {
                 close(listenfd);
+                listenfd = -1;
                 throw std::logic_error(std::string{"Acceptor listen error : "} + std::string{strerror(errno)});
+            }
+        }
+
+        ~Acceptor(){
+            if(listenfd != -1){
+                close(listenfd);
             }
         }
 
         void 
         async_accept(std::function<void(int, std::string, uint16_t)> callback){
             using std::placeholders::_1;
+            auto event = Event{};
             event.fd = listenfd;
             event.pop = std::bind(&Acceptor::async_accept_pop, this, _1, callback);
 
@@ -101,6 +110,7 @@ namespace EventCLoop
 
         }
 
+        [[deprecated("don't use")]]
         void
         accept(struct epoll_event ev){
 

@@ -15,14 +15,19 @@ int main(int argc, char * argv[]){
         while(1){
             try{
                 auto start = std::chrono::steady_clock::now();
-                for(int i = 0 ; i < 50000; i ++){
-                    eventfdlist.SendEvent([]{
+                for(int i = 0 ; i < 100000; i ++){
+                    eventfdlist.SendEvent([i, &start]{
+                        if(i == 100000 - 1)  {
+                            printf("i:%d\n", i);
+                            auto end = std::chrono::steady_clock::now();
+                            auto diff = end - start;
+                            std::cout << std::chrono::duration <double, std::milli> (diff).count() << " ms" << std::endl;
+                        }
                         // std::cout << "Send Event !! 1" << std::endl;
                     });
                 }
-                auto end = std::chrono::steady_clock::now();
-                auto diff = end - start;
-                std::cout << std::chrono::duration <double, std::milli> (diff).count() << " ms" << std::endl;
+                
+
             }
             catch(EventCLoop::Error & error){
                 std::cout << "threadpool error : " << error.what() << std::endl;
@@ -30,8 +35,6 @@ int main(int argc, char * argv[]){
             while(1){
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             }
-            
-
         }
 
     }); 

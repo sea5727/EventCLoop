@@ -22,6 +22,7 @@
 #include <exception>
 #include <stdexcept>
 #include <string>
+#include <queue>
 #include <vector>
 #include <atomic>
 #include <map>

@@ -23,10 +23,12 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <atomic>
 #include <map>
 #include <memory>
 #include <functional>
 #include <array>
+#include <mutex>
 
 #include "Util.hpp"
 #include "Error.hpp"
@@ -36,6 +38,7 @@
 #include "Epoll.hpp"
 #include "Event.hpp"
 #include "Eventfd.hpp"
+#include "EventfdList.hpp"
 #include "Acceptor.hpp"
 
 #include "TcpSession.hpp"

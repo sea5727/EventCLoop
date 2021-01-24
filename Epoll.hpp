@@ -10,11 +10,13 @@ namespace EventCLoop{
     };
     
     class Epoll {
-        constexpr static unsigned int EpollSize = 1024;
-        constexpr static unsigned int EpollTimeout = 1024;
+        // constexpr static unsigned int EpollSize = 1024;
+        // constexpr static unsigned int EpollTimeout = 1024;
+        constexpr static unsigned int EpollSize = 65000;
+        constexpr static unsigned int EpollTimeout = 65000;
         int epollfd;
-        std::map<int, Event & > events;
         std::array<Event, 65000> allevent;
+        // std::array<Event *, 65000> pallevent;
         struct epoll_event ev[EpollSize];
     public:
         Epoll()  {
@@ -42,6 +44,20 @@ namespace EventCLoop{
 
         inline
         void
+        AddEvent2(Event * event, struct epoll_event & ev, Error & error) noexcept {
+        #ifdef DEBUG
+            std::cout << "[" << now_str() << "] ========== start Call AddEvent : " << event.fd << std::endl;
+        #endif
+            if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event->fd, &ev) == -1){
+                error = Error{std::string{"epoll_ctl EPOLL_CTL_ADD fail : "} + strerror(errno)};
+                return;
+            }
+            // pallevent[event->fd] = event;
+            // allevent[event.fd] = event;
+        }
+
+        inline
+        void
         AddEvent(Event & event, struct epoll_event & ev, Error & error) noexcept {
         #ifdef DEBUG
             std::cout << "[" << now_str() << "] ========== start Call AddEvent : " << event.fd << std::endl;
@@ -50,7 +66,6 @@ namespace EventCLoop{
                 error = Error{std::string{"epoll_ctl EPOLL_CTL_ADD fail : "} + strerror(errno)};
                 return;
             }
-            events.insert({event.fd, event});
             allevent[event.fd] = event;
         }
 
@@ -68,8 +83,7 @@ namespace EventCLoop{
         #ifdef DEBUG
             std::cout << "[" << now_str() << "] ========== Call DelEvent : " << eventfd << std::endl;
         #endif
-            events.erase(eventfd);
-            allevent[eventfd].clear();
+            // allevent[eventfd].clear();
             if(epoll_ctl(epollfd, EPOLL_CTL_DEL, eventfd, nullptr) == -1){
                 error = Error{std::string{"epoll_ctl EPOLL_CTL_ADD fail : "} + strerror(errno)};
             }
@@ -99,11 +113,13 @@ namespace EventCLoop{
         Run(){
             auto count = epoll_wait(epollfd, ev, EpollSize, EpollTimeout);
             for(int i = 0 ; i < count ; ++i){
-                std::cout << "[" << now_str() << "] fd:" << ev[i].data.fd << " Epoll event.. event: " << ev[i].events << std::endl;
+                // std::cout << "[" << now_str() << "] fd:" << ev[i].data.fd << " Epoll event.. event: " << ev[i].events << std::endl;
                 int key = ev[i].data.fd;
                 auto & event = allevent[key];
-                if(event.pop)
+                if(event.pop){
                     event.pop(ev[i]);
+                }
+
             }
         }
     private:
